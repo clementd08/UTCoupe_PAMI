@@ -1,4 +1,4 @@
 # UTCoupe_PAMI
 
 
-github pour la progremmation de pami UTCcoupe
+github pour la programmation de pami UTCcoupe
