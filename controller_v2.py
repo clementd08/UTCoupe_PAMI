@@ -102,9 +102,32 @@ class Controller(Node):
             angular_cmd = -max_ang
         # Arrête le robot si la cible est atteinte (position ET orientation dans les tolérances)
         if distance_error <= self.position_tolerance and abs(angle_error) < self.orientation_tolerance:
-            linear_cmd = 0.0
-            angular_cmd = 0.0
-            self.get_logger().info('Objectif atteint : position et orientation atteintes')
+    if not hasattr(self, 'goal_reached_time'):
+        # Marque le temps d'arrivée
+        self.goal_reached_time = self.get_clock().now()
+        self.get_logger().info('Objectif atteint → pause...')
+        return  # Ne publie rien pendant cette itération
+
+    elapsed = (self.get_clock().now() - self.goal_reached_time).nanoseconds * 1e-9
+    if elapsed < 2.0:  # 2 secondes de pause
+        # Envoie une vitesse nulle pendant la pause
+        twist = Twist()
+        self.cmd_pub.publish(twist)
+        return
+    else:
+        # Fin de la pause → reset pour accepter une nouvelle cible
+        self.get_logger().info('Pause terminée.')
+        self.goal_reached_time = None
+        self.goal_x = None
+        self.goal_y = None
+        self.goal_yaw = None
+        self.prev_dist_error = None
+        self.prev_angle_error = None
+        self.integral_dist_error = 0.0
+        self.integral_angle_error = 0.0
+        return
+
+        
         # Publie la commande sur /cmd_vel
         twist = Twist()
         twist.linear.x = linear_cmd
